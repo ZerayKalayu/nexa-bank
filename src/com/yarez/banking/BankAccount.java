@@ -1,5 +1,9 @@
 package com.yarez.banking;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
 public class BankAccount {
 
     private static final int WITHDRAWAL_LIMIT = 5000;
@@ -10,6 +14,8 @@ public class BankAccount {
     private int balance;
     private boolean active;
     private int transactionCount;
+
+    private final List<BankTransaction> transactions = new ArrayList<>();
 
     public BankAccount(long accountNumber,
                        Customer customer,
@@ -39,6 +45,16 @@ public class BankAccount {
 
         balance += amount;
         transactionCount++;
+
+        BankTransaction deposit = new BankTransaction(
+                System.currentTimeMillis(),
+                "DEPOSIT",
+                amount,
+                LocalDateTime.now(),
+                balance
+        );
+        transactions.add(deposit);
+
 
         System.out.println("Deposit successful.");
     }
@@ -73,6 +89,16 @@ public class BankAccount {
         balance -= amount;
         transactionCount++;
 
+        BankTransaction withdrawal = new BankTransaction(
+                System.currentTimeMillis(),
+                "WITHDRAWAL",
+                amount,
+                LocalDateTime.now(),
+                balance
+        );
+
+        transactions.add(withdrawal);
+
         System.out.println("Withdrawal successful.");
     }
 
@@ -88,5 +114,14 @@ public class BankAccount {
         System.out.println("Balance: " + balance);
         System.out.println("Active: " + active);
         System.out.println("Transactions: " + transactionCount);
+    }
+
+    public void displayTransactionHistory() {
+
+        System.out.println("===== Transaction History =====");
+
+        for (BankTransaction transaction : transactions) {
+            System.out.println(transaction);
+        }
     }
 }

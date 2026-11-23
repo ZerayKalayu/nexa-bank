@@ -25,6 +25,7 @@ public class Main {
         account.withdraw(5001);
         account.withdraw(5000);
 
+        account.displayTransactionHistory();
         account.displayAccountInformation();
     }
 }
