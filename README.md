@@ -1,6 +1,6 @@
 # Java Collections in the Banking Simulator
 
-This is a small Java 21 console application that models customers, accounts, transactions, and banking requests. Its purpose here is study: each collection in the code solves a specific problem — append-only transaction history, duplicate detection, insertion-ordered "recent" views, sorted lookups, FIFO work queues, priority work queues, and bounded activity logs. The README explains what is actually implemented in `src/com/yarez/banking`, with real code and real console output. It also states the costs of each choice and where the current code has rough edges.
+This is a small Java 21 console application that models customers, accounts, transactions, and banking requests. Its purpose here is study: each collection in the code solves a specific problem — append-only transaction history, duplicate detection, insertion-ordered "recent" views, sorted lookups, FIFO work queues, priority work queues, and bounded activity logs. The README explains what is actually implemented in `src/main/java/com/yarez/banking`, with real code and real console output. It also states the costs of each choice and where the current code has rough edges.
 
 ## Table of contents
 
@@ -33,11 +33,11 @@ This is a small Java 21 console application that models customers, accounts, tra
 | Build file | `pom.xml` (Java 21, UTF-8, JUnit Jupiter 5.10.2, Surefire 3.2.5) |
 | Tests | `src/test/java/com/yarez/banking` (18 JUnit 5 tests) |
 | Entry point | `com.yarez.banking.Main` (`public static void main`) |
-| Source root | `src` (configured in `pom.xml`; the compiler excludes `src/test/java`) |
+| Source root | `src/main/java` (standard Maven layout; tests live in `src/test/java`) |
 
 ### Maven build, tests, and run
 
-Run these from the repository/worktree root:
+Run these from the repository root:
 
 ```powershell
 mvn -q compile
@@ -60,8 +60,7 @@ The program still compiles and runs without Maven. The output directory is outsi
 ```powershell
 $classes = 'C:\Users\Yarez\AppData\Local\Temp\opencode\banking-classes'
 New-Item -ItemType Directory -Force -Path $classes | Out-Null
-$sources = Get-ChildItem -Path src -Recurse -Filter *.java |
-    Where-Object { $_.FullName -notmatch '\\test\\' } |
+$sources = Get-ChildItem -Path src/main/java -Recurse -Filter *.java |
     ForEach-Object { $_.FullName }
 
 javac -encoding UTF-8 -d $classes $sources
@@ -75,11 +74,11 @@ Result: `javac` exited `0` with no warnings, and `java` exited `0`. The run prin
 ```text
 java-core-banking-simulator/
 ├── .gitignore                         # ignores .idea/, *.iml, out/, target/, *.class
+├── LICENSE                            # MIT license
 ├── README.md                          # this study guide
-├── pom.xml                            # Java 21, JUnit 5, source root src
-├── java-core-banking-simulator.iml    # IntelliJ module; marks src as the source root
+├── pom.xml                            # Java 21, JUnit 5, standard Maven layout
 └── src/
-    ├── com/yarez/banking/
+    ├── main/java/com/yarez/banking/
     │   ├── Main.java                      # entry point; runs all 16 demonstrations
     │   ├── BankAccount.java               # ArrayList history, Comparable, equals/hashCode
     │   ├── BankTransaction.java           # immutable transaction record-like class
@@ -151,14 +150,14 @@ All scenarios below run on one thread: `Main.main` constructs the objects, calls
 
 #### 6.1.1 `BankAccount` transaction history
 
-`src/com/yarez/banking/BankAccount.java`
+`src/main/java/com/yarez/banking/BankAccount.java`
 
 ```java
 public class BankAccount implements Comparable<BankAccount> {
     private final List<BankTransaction> transactions = new ArrayList<>();
 ```
 
-`src/com/yarez/banking/BankAccount.java`
+`src/main/java/com/yarez/banking/BankAccount.java`
 
 ```java
         BankTransaction deposit = new BankTransaction(
@@ -191,7 +190,7 @@ BankTransaction{transactionId=2af7b09a-104d-4f54-99dd-be3a09c05166, type='WITHDR
 
 #### 6.1.2 Step list using `LinkedList<String>`
 
-`src/com/yarez/banking/Main.java`
+`src/main/java/com/yarez/banking/Main.java`
 
 ```java
         LinkedList<String> bankingOperations = new LinkedList<>();
@@ -220,7 +219,7 @@ All operations: [Verify customer, Validate account, Process deposit]
 
 #### 6.1.3 `LinkedList<BankingRequest>` for pending requests
 
-`src/com/yarez/banking/Main.java`
+`src/main/java/com/yarez/banking/Main.java`
 
 ```java
         LinkedList<BankingRequest> pendingRequests = new LinkedList<>();
@@ -251,7 +250,7 @@ BankingRequest{requestId=1003, customerName='David', operationType='TRANSFER', a
 
 #### 6.1.4 Mutable `ArrayList` of accounts for sorting
 
-`src/com/yarez/banking/Main.java`
+`src/main/java/com/yarez/banking/Main.java`
 
 ```java
         List<BankAccount> accounts = new ArrayList<>();
@@ -289,7 +288,7 @@ Account Number: 10000001 | Customer: John | Balance: 15000
 
 #### 6.1.5 Copying an immutable snapshot back into a mutable list
 
-`src/com/yarez/banking/Main.java`
+`src/main/java/com/yarez/banking/Main.java`
 
 ```java
         // getTransactionHistory() returns an immutable copy.
@@ -340,7 +339,7 @@ A `HashSet` is backed by a `HashMap`: elements are keys, hashing selects a bucke
 
 #### 6.2.1 `HashSet<String>` for unique transaction IDs
 
-`src/com/yarez/banking/TransactionRegistry.java`
+`src/main/java/com/yarez/banking/TransactionRegistry.java`
 
 ```java
     private final Set<String> transactionIds = new HashSet<>();
@@ -378,7 +377,7 @@ The display order above is the captured `HashSet` iteration order, not insertion
 
 #### 6.2.2 `LinkedHashSet<String>` for recent transaction IDs
 
-`src/com/yarez/banking/RecentTransactionRegistry.java`
+`src/main/java/com/yarez/banking/RecentTransactionRegistry.java`
 
 ```java
     private final Set<String> recentTransactionIds = new LinkedHashSet<>();
@@ -414,7 +413,7 @@ Total recent transactions: 4
 
 #### 6.2.3 `TreeSet<String>` for sorted IDs and extremes
 
-`src/com/yarez/banking/SortedTransactionRegistry.java`
+`src/main/java/com/yarez/banking/SortedTransactionRegistry.java`
 
 ```java
     private final NavigableSet<String> transactionIds = new TreeSet<>();
@@ -480,7 +479,7 @@ Last transaction: TXN-1008
 
 #### 6.3.1 `HashMap<Long, BankAccount>` account registry
 
-`src/com/yarez/banking/AccountRegistry.java`
+`src/main/java/com/yarez/banking/AccountRegistry.java`
 
 ```java
     private final Map<Long, BankAccount> accounts = new HashMap<>();
@@ -528,7 +527,7 @@ The captured iteration order happens to be ascending here, but `HashMap` does no
 
 #### 6.3.2 `LinkedHashMap<Long, BankAccount>` recent accounts
 
-`src/com/yarez/banking/RecentAccountRegistry.java`
+`src/main/java/com/yarez/banking/RecentAccountRegistry.java`
 
 ```java
     private final Map<Long, BankAccount> accounts = new LinkedHashMap<>();
@@ -562,7 +561,7 @@ Customer: Mary
 
 #### 6.3.3 `TreeMap<Long, BankAccount>` sorted accounts
 
-`src/com/yarez/banking/SortedAccountRegistry.java`
+`src/main/java/com/yarez/banking/SortedAccountRegistry.java`
 
 ```java
     private final TreeMap<Long, BankAccount> accounts = new TreeMap<>();
@@ -625,7 +624,7 @@ Largest account number: 10000003
 
 #### 6.4.1 `ArrayDeque` as `Queue<BankingRequest>`
 
-`src/com/yarez/banking/BankingRequestQueue.java`
+`src/main/java/com/yarez/banking/BankingRequestQueue.java`
 
 ```java
     private final Queue<BankingRequest> requests = new ArrayDeque<>();
@@ -665,7 +664,7 @@ Remaining requests: 2
 
 #### 6.4.2 `PriorityQueue<PriorityBankingRequest>` for high-priority work
 
-`src/com/yarez/banking/PriorityBankingRequestQueue.java`
+`src/main/java/com/yarez/banking/PriorityBankingRequestQueue.java`
 
 ```java
     private static final class QueuedRequest {
@@ -705,7 +704,7 @@ Processed: PriorityBankingRequest{requestId=2003, customerName='David', operatio
 
 #### 6.4.3 `ArrayDeque` as bounded `Deque<BankTransaction>`
 
-`src/com/yarez/banking/RecentActivityManager.java`
+`src/main/java/com/yarez/banking/RecentActivityManager.java`
 
 ```java
     private static final int MAX_ACTIVITIES = 10;
@@ -771,7 +770,7 @@ Only three transactions existed, so the eviction branch did not run in this capt
 
 #### 6.5.1 `Comparable<BankAccount>`
 
-`src/com/yarez/banking/BankAccount.java`
+`src/main/java/com/yarez/banking/BankAccount.java`
 
 ```java
     @Override
@@ -822,7 +821,7 @@ Account Number: 10000003 | Customer: David | Balance: 35000
 
 #### 6.5.2 `Comparator` for alternate account orders
 
-`src/com/yarez/banking/AccountSorting.java`
+`src/main/java/com/yarez/banking/AccountSorting.java`
 
 ```java
         accounts.sort(Comparator.naturalOrder());
@@ -865,7 +864,7 @@ Account Number: 10000003 | Customer: David | Balance: 35000
 
 #### 6.5.3 `Comparator` for transactions
 
-`src/com/yarez/banking/TransactionSorting.java`
+`src/main/java/com/yarez/banking/TransactionSorting.java`
 
 ```java
         transactions.sort(
@@ -905,7 +904,7 @@ In this capture all three `LocalDateTime` values are identical, so the timestamp
 
 #### 6.5.4 `List.copyOf` snapshots
 
-`src/com/yarez/banking/BankAccount.java`
+`src/main/java/com/yarez/banking/BankAccount.java`
 
 ```java
     // Get transaction history
@@ -914,7 +913,7 @@ In this capture all three `LocalDateTime` values are identical, so the timestamp
     }
 ```
 
-`src/com/yarez/banking/RecentActivityManager.java`
+`src/main/java/com/yarez/banking/RecentActivityManager.java`
 
 ```java
     // 3. Get all recent activities as an immutable list
@@ -973,13 +972,13 @@ That is consistent with the design: one thread creates accounts, registers IDs, 
 
 No stream pipelines exist in this project. There are no `stream()` calls, no `Collectors` imports, and no `toList()` calls. All iteration is done with enhanced `for` loops and `Iterator` implicitly, for example:
 
-`src/com/yarez/banking/AccountRegistry.java`
+`src/main/java/com/yarez/banking/AccountRegistry.java`
 
 ```java
         for (Map.Entry<Long, BankAccount> entry : accounts.entrySet()) {
 ```
 
-`src/com/yarez/banking/BankAccount.java`
+`src/main/java/com/yarez/banking/BankAccount.java`
 
 ```java
         for (BankTransaction transaction : transactions) {
