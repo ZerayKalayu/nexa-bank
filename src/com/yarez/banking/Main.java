@@ -29,7 +29,7 @@ public class Main {
         BankAccount account = new BankAccount(
                 10000001L,
                 customer,
-                10000,
+                Money.of("10000"),
                 true
         );
 
@@ -38,11 +38,11 @@ public class Main {
         // 3. Deposit and withdrawal operations
         // ==========================================
 
-        account.deposit(2500);
-        account.withdraw(3000);
-        account.withdraw(6000);
-        account.withdraw(5001);
-        account.withdraw(5000);
+        account.deposit(Money.of("2500"));
+        account.withdraw(Money.of("3000"));
+        account.withdraw(Money.of("6000"));
+        account.withdraw(Money.of("5001"));
+        account.withdraw(Money.of("5000"));
 
 
         // ==========================================
@@ -82,15 +82,15 @@ public class Main {
         LinkedList<BankingRequest> pendingRequests = new LinkedList<>();
 
         pendingRequests.addLast(
-                new BankingRequest(1001, "John", "DEPOSIT", 5000)
+                new BankingRequest(1001, "John", "DEPOSIT", Money.of("5000"))
         );
 
         pendingRequests.addLast(
-                new BankingRequest(1002, "Mary", "WITHDRAWAL", 2000)
+                new BankingRequest(1002, "Mary", "WITHDRAWAL", Money.of("2000"))
         );
 
         pendingRequests.addLast(
-                new BankingRequest(1003, "David", "TRANSFER", 3000)
+                new BankingRequest(1003, "David", "TRANSFER", Money.of("3000"))
         );
 
         System.out.println("\n===== Pending Banking Requests =====");
@@ -179,15 +179,15 @@ public class Main {
         );
 
         BankAccount account1 = new BankAccount(
-                10000001L, customer1, 15000, true
+                10000001L, customer1, Money.of("15000"), true
         );
 
         BankAccount account2 = new BankAccount(
-                10000002L, customer2, 25000, true
+                10000002L, customer2, Money.of("25000"), true
         );
 
         BankAccount account3 = new BankAccount(
-                10000003L, customer3, 35000, true
+                10000003L, customer3, Money.of("35000"), true
         );
 
 // Register accounts
@@ -265,15 +265,15 @@ public class Main {
 
 // Add requests
         requestQueue.addRequest(
-                new BankingRequest(1001, "John", "DEPOSIT", 5000)
+                new BankingRequest(1001, "John", "DEPOSIT", Money.of("5000"))
         );
 
         requestQueue.addRequest(
-                new BankingRequest(1002, "Mary", "WITHDRAWAL", 2000)
+                new BankingRequest(1002, "Mary", "WITHDRAWAL", Money.of("2000"))
         );
 
         requestQueue.addRequest(
-                new BankingRequest(1003, "David", "TRANSFER", 3000)
+                new BankingRequest(1003, "David", "TRANSFER", Money.of("3000"))
         );
 
 // Display pending requests
@@ -308,28 +308,28 @@ public class Main {
 
         priorityQueue.addRequest(
                 new PriorityBankingRequest(
-                        2001, "John", "DEPOSIT", 5000,
+                        2001, "John", "DEPOSIT", Money.of("5000"),
                         RequestPriority.NORMAL
                 )
         );
 
         priorityQueue.addRequest(
                 new PriorityBankingRequest(
-                        2002, "Mary", "FRAUD INVESTIGATION", 0,
+                        2002, "Mary", "FRAUD INVESTIGATION", Money.of("0"),
                         RequestPriority.HIGH
                 )
         );
 
         priorityQueue.addRequest(
                 new PriorityBankingRequest(
-                        2003, "David", "ACCOUNT STATEMENT", 0,
+                        2003, "David", "ACCOUNT STATEMENT", Money.of("0"),
                         RequestPriority.LOW
                 )
         );
 
         priorityQueue.addRequest(
                 new PriorityBankingRequest(
-                        2004, "Helen", "ACCOUNT BLOCKING", 0,
+                        2004, "Helen", "ACCOUNT BLOCKING", Money.of("0"),
                         RequestPriority.HIGH
                 )
         );

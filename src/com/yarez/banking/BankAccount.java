@@ -1,5 +1,6 @@
 package com.yarez.banking;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -7,12 +8,12 @@ import java.util.UUID;
 
 public class BankAccount implements Comparable<BankAccount> {
 
-    private static final int WITHDRAWAL_LIMIT = 5000;
+    private static final BigDecimal WITHDRAWAL_LIMIT = Money.of(5000);
 
     private final long accountNumber;
     private final Customer customer;
 
-    private int balance;
+    private BigDecimal balance;
     private boolean active;
     private int transactionCount;
 
@@ -22,8 +23,17 @@ public class BankAccount implements Comparable<BankAccount> {
                        Customer customer,
                        int balance,
                        boolean active) {
+        this(accountNumber, customer, Money.of(balance), active);
+    }
 
-        if (balance < 0) {
+    public BankAccount(long accountNumber,
+                       Customer customer,
+                       BigDecimal balance,
+                       boolean active) {
+
+        BigDecimal openingBalance = Money.of(balance);
+
+        if (openingBalance.signum() < 0) {
             throw new IllegalArgumentException(
                     "Initial balance cannot be negative."
             );
@@ -31,7 +41,7 @@ public class BankAccount implements Comparable<BankAccount> {
 
         this.accountNumber = accountNumber;
         this.customer = customer;
-        this.balance = balance;
+        this.balance = openingBalance;
         this.active = active;
     }
 
@@ -43,26 +53,32 @@ public class BankAccount implements Comparable<BankAccount> {
         return customer;
     }
 
-    public int getBalance() {
+    public BigDecimal getBalance() {
         return balance;
     }
 
     public void deposit(int amount) {
+        deposit(Money.of(amount));
+    }
 
-        if (amount <= 0) {
+    public void deposit(BigDecimal amount) {
+
+        BigDecimal value = Money.of(amount);
+
+        if (value.signum() <= 0) {
             System.out.println(
                     "Deposit amount must be greater than zero."
             );
             return;
         }
 
-        balance += amount;
+        balance = Money.of(balance.add(value));
         transactionCount++;
 
         BankTransaction deposit = new BankTransaction(
                UUID.randomUUID(),// System.currentTimeMillis(),
                 "DEPOSIT",
-                amount,
+                value,
                 LocalDateTime.now(),
                 balance
         );
@@ -73,8 +89,14 @@ public class BankAccount implements Comparable<BankAccount> {
     }
 
     public void withdraw(int amount) {
+        withdraw(Money.of(amount));
+    }
 
-        if (amount <= 0) {
+    public void withdraw(BigDecimal amount) {
+
+        BigDecimal value = Money.of(amount);
+
+        if (value.signum() <= 0) {
             System.out.println(
                     "Withdrawal amount must be greater than zero."
             );
@@ -86,26 +108,26 @@ public class BankAccount implements Comparable<BankAccount> {
             return;
         }
 
-        if (amount > WITHDRAWAL_LIMIT) {
+        if (value.compareTo(WITHDRAWAL_LIMIT) > 0) {
             System.out.println(
                     "Withdrawal exceeds the maximum limit of "
-                            + WITHDRAWAL_LIMIT
+                            + Money.format(WITHDRAWAL_LIMIT)
             );
             return;
         }
 
-        if (amount > balance) {
+        if (value.compareTo(balance) > 0) {
             System.out.println("Insufficient balance.");
             return;
         }
 
-        balance -= amount;
+        balance = Money.of(balance.subtract(value));
         transactionCount++;
 
         BankTransaction withdrawal = new BankTransaction(
                 UUID.randomUUID(),//System.currentTimeMillis(),
                 "WITHDRAWAL",
-                amount,
+                value,
                 LocalDateTime.now(),
                 balance
         );
@@ -116,7 +138,7 @@ public class BankAccount implements Comparable<BankAccount> {
     }
 
     public void displayBalance() {
-        System.out.println("Current Balance: " + balance);
+        System.out.println("Current Balance: " + Money.format(balance));
     }
 
     public void displayAccountInformation() {
@@ -124,7 +146,7 @@ public class BankAccount implements Comparable<BankAccount> {
         System.out.println("===== Account Information =====");
         System.out.println("Account Number: " + accountNumber);
         System.out.println("Customer: " + customer.getName());
-        System.out.println("Balance: " + balance);
+        System.out.println("Balance: " + Money.format(balance));
         System.out.println("Active: " + active);
         System.out.println("Transactions: " + transactionCount);
     }
