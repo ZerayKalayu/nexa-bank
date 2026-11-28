@@ -3,8 +3,9 @@ package com.yarez.banking;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
-public class BankAccount {
+public class BankAccount implements Comparable<BankAccount> {
 
     private static final int WITHDRAWAL_LIMIT = 5000;
 
@@ -34,6 +35,18 @@ public class BankAccount {
         this.active = active;
     }
 
+    public long getAccountNumber() {
+        return accountNumber;
+    }
+
+    public Customer getCustomer() {
+        return customer;
+    }
+
+    public int getBalance() {
+        return balance;
+    }
+
     public void deposit(int amount) {
 
         if (amount <= 0) {
@@ -47,7 +60,7 @@ public class BankAccount {
         transactionCount++;
 
         BankTransaction deposit = new BankTransaction(
-                System.currentTimeMillis(),
+               UUID.randomUUID(),// System.currentTimeMillis(),
                 "DEPOSIT",
                 amount,
                 LocalDateTime.now(),
@@ -90,7 +103,7 @@ public class BankAccount {
         transactionCount++;
 
         BankTransaction withdrawal = new BankTransaction(
-                System.currentTimeMillis(),
+                UUID.randomUUID(),//System.currentTimeMillis(),
                 "WITHDRAWAL",
                 amount,
                 LocalDateTime.now(),
@@ -116,6 +129,11 @@ public class BankAccount {
         System.out.println("Transactions: " + transactionCount);
     }
 
+    // Get transaction history
+    public List<BankTransaction> getTransactionHistory() {
+        return List.copyOf(transactions);
+    }
+
     public void displayTransactionHistory() {
 
         System.out.println("===== Transaction History =====");
@@ -123,5 +141,24 @@ public class BankAccount {
         for (BankTransaction transaction : transactions) {
             System.out.println(transaction);
         }
+    }
+
+    // ==========================================
+// Comparable implementation
+// ==========================================
+
+    @Override
+    public int compareTo(BankAccount other) {
+
+        if (other == null) {
+            throw new NullPointerException(
+                    "Cannot compare a bank account with null."
+            );
+        }
+
+        return Long.compare(
+                this.accountNumber,
+                other.accountNumber
+        );
     }
 }
