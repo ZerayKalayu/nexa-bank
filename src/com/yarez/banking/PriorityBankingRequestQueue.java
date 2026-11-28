@@ -6,11 +6,24 @@ import java.util.PriorityQueue;
 
 public class PriorityBankingRequestQueue {
 
-    private final PriorityQueue<PriorityBankingRequest> requests =
+    private static final class QueuedRequest {
+
+        private final PriorityBankingRequest request;
+        private final long sequence;
+
+        private QueuedRequest(PriorityBankingRequest request, long sequence) {
+            this.request = request;
+            this.sequence = sequence;
+        }
+    }
+
+    private long nextSequence;
+
+    private final PriorityQueue<QueuedRequest> requests =
             new PriorityQueue<>(
                     Comparator.comparing(
-                            PriorityBankingRequest::getPriority
-                    )
+                            (QueuedRequest entry) -> entry.request.getPriority()
+                    ).thenComparingLong(entry -> entry.sequence)
             );
 
     // 1. Add a banking request
@@ -21,7 +34,9 @@ public class PriorityBankingRequestQueue {
             return false;
         }
 
-        boolean added = requests.offer(request);
+        boolean added = requests.offer(
+                new QueuedRequest(request, nextSequence++)
+        );
 
         if (added) {
             System.out.println(
@@ -36,12 +51,14 @@ public class PriorityBankingRequestQueue {
     // 2. Process the highest-priority request
     public PriorityBankingRequest processNextRequest() {
 
-        PriorityBankingRequest request = requests.poll();
+        QueuedRequest entry = requests.poll();
 
-        if (request == null) {
+        if (entry == null) {
             System.out.println("No pending banking requests.");
             return null;
         }
+
+        PriorityBankingRequest request = entry.request;
 
         System.out.println(
                 "Processing request: " + request.getRequestId()
@@ -54,10 +71,12 @@ public class PriorityBankingRequestQueue {
     // 3. View the next request without removing it
     public PriorityBankingRequest peekNextRequest() {
 
-        return requests.peek();
+        QueuedRequest entry = requests.peek();
+
+        return entry == null ? null : entry.request;
     }
 
-    // 4. Display all pending requests
+    // 4. Display all pending requests in true priority order
     public void displayPendingRequests() {
 
         System.out.println("===== Pending Priority Requests =====");
@@ -67,8 +86,12 @@ public class PriorityBankingRequestQueue {
             return;
         }
 
-        for (PriorityBankingRequest request : requests) {
-            System.out.println(request);
+        PriorityQueue<QueuedRequest> ordered =
+                new PriorityQueue<>(requests.comparator());
+        ordered.addAll(requests);
+
+        while (!ordered.isEmpty()) {
+            System.out.println(ordered.poll().request);
         }
     }
 
