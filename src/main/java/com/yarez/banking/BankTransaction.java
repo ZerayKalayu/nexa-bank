@@ -1,28 +1,41 @@
+
 package com.yarez.banking;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 public class BankTransaction {
-    private final long transactionId;
+
+    private final UUID transactionId;
     private final String type;
-    private final int amount;
+    private final BigDecimal amount;
     private final LocalDateTime timestamp;
-    private final int balanceAfter;
+    private final BigDecimal balanceAfter;
 
-
-    public BankTransaction(long transactionId,
+    public BankTransaction(UUID transactionId,
                            String type,
                            int amount,
                            LocalDateTime timestamp,
                            int balanceAfter) {
-        this.transactionId = transactionId;
-        this.type = type;
-        this.amount = amount;
-        this.timestamp = timestamp;
-        this.balanceAfter = balanceAfter;
+        this(transactionId, type, Money.of(amount), timestamp,
+                Money.of(balanceAfter));
     }
 
-    public long getTransactionId() {
+    public BankTransaction(UUID transactionId,
+                           String type,
+                           BigDecimal amount,
+                           LocalDateTime timestamp,
+                           BigDecimal balanceAfter) {
+
+        this.transactionId = transactionId;
+        this.type = type;
+        this.amount = Money.of(amount);
+        this.timestamp = timestamp;
+        this.balanceAfter = Money.of(balanceAfter);
+    }
+
+    public UUID getTransactionId() {
         return transactionId;
     }
 
@@ -30,7 +43,7 @@ public class BankTransaction {
         return type;
     }
 
-    public int getAmount() {
+    public BigDecimal getAmount() {
         return amount;
     }
 
@@ -38,7 +51,7 @@ public class BankTransaction {
         return timestamp;
     }
 
-    public int getBalanceAfter() {
+    public BigDecimal getBalanceAfter() {
         return balanceAfter;
     }
 
@@ -47,9 +60,9 @@ public class BankTransaction {
         return "BankTransaction{" +
                 "transactionId=" + transactionId +
                 ", type='" + type + '\'' +
-                ", amount=" + amount +
+                ", amount=" + Money.format(amount) +
                 ", timestamp=" + timestamp +
-                ", balanceAfter=" + balanceAfter +
+                ", balanceAfter=" + Money.format(balanceAfter) +
                 '}';
     }
 }
