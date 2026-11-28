@@ -1,12 +1,14 @@
 
 package com.yarez.banking;
 
+import java.math.BigDecimal;
+
 public class PriorityBankingRequest {
 
     private final long requestId;
     private final String customerName;
     private final String operationType;
-    private final int amount;
+    private final BigDecimal amount;
     private final RequestPriority priority;
 
     public PriorityBankingRequest(
@@ -14,6 +16,15 @@ public class PriorityBankingRequest {
             String customerName,
             String operationType,
             int amount,
+            RequestPriority priority) {
+        this(requestId, customerName, operationType, Money.of(amount), priority);
+    }
+
+    public PriorityBankingRequest(
+            long requestId,
+            String customerName,
+            String operationType,
+            BigDecimal amount,
             RequestPriority priority) {
 
         if (requestId <= 0) {
@@ -34,7 +45,9 @@ public class PriorityBankingRequest {
             );
         }
 
-        if (amount < 0) {
+        BigDecimal value = Money.of(amount);
+
+        if (value.signum() < 0) {
             throw new IllegalArgumentException(
                     "Amount cannot be negative."
             );
@@ -49,7 +62,7 @@ public class PriorityBankingRequest {
         this.requestId = requestId;
         this.customerName = customerName;
         this.operationType = operationType;
-        this.amount = amount;
+        this.amount = value;
         this.priority = priority;
     }
 
@@ -65,7 +78,7 @@ public class PriorityBankingRequest {
         return operationType;
     }
 
-    public int getAmount() {
+    public BigDecimal getAmount() {
         return amount;
     }
 
@@ -79,7 +92,7 @@ public class PriorityBankingRequest {
                 "requestId=" + requestId +
                 ", customerName='" + customerName + '\'' +
                 ", operationType='" + operationType + '\'' +
-                ", amount=" + amount +
+                ", amount=" + Money.format(amount) +
                 ", priority=" + priority +
                 '}';
     }

@@ -35,7 +35,7 @@ public class AccountSorting {
         }
 
         accounts.sort(
-                Comparator.comparingInt(BankAccount::getBalance)
+                Comparator.comparing(BankAccount::getBalance)
         );
 
         System.out.println("Accounts sorted by balance (ascending).");
@@ -54,7 +54,7 @@ public class AccountSorting {
         }
 
         accounts.sort(
-                Comparator.comparingInt(BankAccount::getBalance)
+                Comparator.comparing(BankAccount::getBalance)
                         .reversed()
         );
 
@@ -75,7 +75,7 @@ public class AccountSorting {
         }
 
         Comparator<BankAccount> comparator =
-                Comparator.comparingInt(BankAccount::getBalance)
+                Comparator.comparing(BankAccount::getBalance)
                         .thenComparingLong(BankAccount::getAccountNumber);
 
         accounts.sort(comparator);
@@ -109,7 +109,7 @@ public class AccountSorting {
             System.out.println(
                     "Account Number: " + account.getAccountNumber()
                             + " | Customer: " + account.getCustomer().getName()
-                            + " | Balance: " + account.getBalance()
+                            + " | Balance: " + Money.format(account.getBalance())
             );
         }
     }

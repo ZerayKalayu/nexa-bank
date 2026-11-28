@@ -1,18 +1,21 @@
 package com.yarez.banking;
 
-public class Customer {
+/**
+ * Immutable customer data. The no-arg constructor keeps the original defaults,
+ * and the all-args constructor is the only way to set real values.
+ */
+public final class Customer {
 
-    //1. Fields
-    private long id;
-    private String name;
-    private int age;
-    private String email;
-    private boolean active;
+    private final long id;
+    private final String name;
+    private final int age;
+    private final String email;
+    private final boolean active;
 
     public Customer() {
+        this(0L, null, 0, null, false);
     }
 
-    //2. constructor
     public Customer(long id, String name, int age, String email, boolean active) {
         this.id = id;
         this.name = name;
@@ -25,43 +28,22 @@ public class Customer {
         return id;
     }
 
-    public void setId(long id) {
-        this.id = id;
-    }
-
     public String getName() {
         return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public int getAge() {
         return age;
     }
 
-    public void setAge(int age) {
-        this.age = age;
-    }
-
     public String getEmail() {
         return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
     }
 
     public boolean isActive() {
         return active;
     }
 
-    public void setActive(boolean active) {
-        this.active = active;
-    }
-
-    //3. Display customer information
     public void displayInformation(){
         System.out.println("===== customer information ======");
         System.out.println("ID: " + id);
@@ -70,5 +52,4 @@ public class Customer {
         System.out.println("Email: "+ email);
         System.out.println("Active:"+ active);
     }
-
 }

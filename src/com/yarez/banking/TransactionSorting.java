@@ -19,7 +19,7 @@ public class TransactionSorting {
         }
 
         transactions.sort(
-                Comparator.comparingInt(BankTransaction::getAmount)
+                Comparator.comparing(BankTransaction::getAmount)
         );
 
         System.out.println(
@@ -41,7 +41,7 @@ public class TransactionSorting {
         }
 
         transactions.sort(
-                Comparator.comparingInt(BankTransaction::getAmount)
+                Comparator.comparing(BankTransaction::getAmount)
                         .reversed()
         );
 
@@ -110,7 +110,7 @@ public class TransactionSorting {
 
         Comparator<BankTransaction> comparator =
                 Comparator.comparing(BankTransaction::getType)
-                        .thenComparingInt(BankTransaction::getAmount);
+                        .thenComparing(BankTransaction::getAmount);
 
         transactions.sort(comparator);
 

@@ -1,12 +1,12 @@
 
 package com.yarez.banking;
 
-import java.util.Set;
+import java.util.NavigableSet;
 import java.util.TreeSet;
 
 public class SortedTransactionRegistry {
 
-    private final Set<String> transactionIds = new TreeSet<>();
+    private final NavigableSet<String> transactionIds = new TreeSet<>();
 
     // 1. Register a transaction ID
     public boolean addTransaction(String transactionId) {
@@ -67,11 +67,11 @@ public class SortedTransactionRegistry {
 
     // 7. Get the smallest transaction ID
     public String getFirstTransaction() {
-        return transactionIds.isEmpty() ? null : ((TreeSet<String>) transactionIds).first();
+        return transactionIds.isEmpty() ? null : transactionIds.first();
     }
 
     // 8. Get the largest transaction ID
     public String getLastTransaction() {
-        return transactionIds.isEmpty() ? null : ((TreeSet<String>) transactionIds).last();
+        return transactionIds.isEmpty() ? null : transactionIds.last();
     }
 }

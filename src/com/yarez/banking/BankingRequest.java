@@ -1,17 +1,26 @@
 
 package com.yarez.banking;
 
+import java.math.BigDecimal;
+
 public class BankingRequest {
 
     private final long requestId;
     private final String customerName;
     private final String operationType;
-    private final int amount;
+    private final BigDecimal amount;
 
     public BankingRequest(long requestId,
                           String customerName,
                           String operationType,
                           int amount) {
+        this(requestId, customerName, operationType, Money.of(amount));
+    }
+
+    public BankingRequest(long requestId,
+                          String customerName,
+                          String operationType,
+                          BigDecimal amount) {
 
         if (requestId <= 0) {
             throw new IllegalArgumentException("Request ID must be positive.");
@@ -25,14 +34,16 @@ public class BankingRequest {
             throw new IllegalArgumentException("Operation type is required.");
         }
 
-        if (amount < 0) {
+        BigDecimal value = Money.of(amount);
+
+        if (value.signum() < 0) {
             throw new IllegalArgumentException("Amount cannot be negative.");
         }
 
         this.requestId = requestId;
         this.customerName = customerName;
         this.operationType = operationType;
-        this.amount = amount;
+        this.amount = value;
     }
 
     public long getRequestId() {
@@ -47,7 +58,7 @@ public class BankingRequest {
         return operationType;
     }
 
-    public int getAmount() {
+    public BigDecimal getAmount() {
         return amount;
     }
 
@@ -57,7 +68,7 @@ public class BankingRequest {
                 "requestId=" + requestId +
                 ", customerName='" + customerName + '\'' +
                 ", operationType='" + operationType + '\'' +
-                ", amount=" + amount +
+                ", amount=" + Money.format(amount) +
                 '}';
     }
 }

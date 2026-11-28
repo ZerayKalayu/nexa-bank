@@ -29,51 +29,46 @@ This is a small Java 21 console application that models customers, accounts, tra
 | Item | Verified value |
 | --- | --- |
 | Java | `java version "21.0.5"`, `javac 21.0.5` |
-| Maven | `Apache Maven 3.9.12` installed |
-| Build file | **No `pom.xml` exists in this directory** |
-| Tests | **No `src/test` directory and no `*Test.java`/`*Tests.java` files exist** |
+| Maven | `Apache Maven 3.9.12` |
+| Build file | `pom.xml` (Java 21, UTF-8, JUnit Jupiter 5.10.2, Surefire 3.2.5) |
+| Tests | `src/test/java/com/yarez/banking` (18 JUnit 5 tests) |
 | Entry point | `com.yarez.banking.Main` (`public static void main`) |
-| Source root | `src`, configured in `java-core-banking-simulator.iml` |
+| Source root | `src` (configured in `pom.xml`; the compiler excludes `src/test/java`) |
 
-The Maven commands requested for a typical project were tried and fail. This is a real result, not an omission:
+### Maven build, tests, and run
+
+Run these from the repository/worktree root:
 
 ```powershell
 mvn -q compile
+mvn -q test
+java -cp target/classes com.yarez.banking.Main
 ```
 
-```text
-[ERROR] The goal you specified requires a project to execute but there is no POM in this directory (E:\projects\senior-java-developer\java-core-banking-simulator\java-core-banking-simulator). Please verify you invoked Maven from the correct directory. -> [Help 1]
-[ERROR]
-[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
-[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+`mvn -q test` is green. To see the test totals and individual class names, run `mvn test`. To run one tutorial test at a time, for example while studying the red-then-green commits:
+
+```powershell
+mvn -q test -Dtest=BankAccountEqualityTest
+mvn -q test -Dtest=PriorityBankingRequestQueueTest
+mvn -q test -Dtest=BigDecimalMoneyTest
 ```
 
-`mvn -q test` fails with the same message because there is no POM.
+### javac/java fallback
 
-### Working build and run (PowerShell)
-
-These commands were run successfully. The output directory is outside the repository, so no generated `.class` files are added to Git. Any writable directory can be used instead.
+The program still compiles and runs without Maven. The output directory is outside the repository, so no generated `.class` files are added to Git. Any writable directory can be used instead.
 
 ```powershell
 $classes = 'C:\Users\Yarez\AppData\Local\Temp\opencode\banking-classes'
 New-Item -ItemType Directory -Force -Path $classes | Out-Null
-$sources = Get-ChildItem -Path src -Recurse -Filter *.java | ForEach-Object { $_.FullName }
+$sources = Get-ChildItem -Path src -Recurse -Filter *.java |
+    Where-Object { $_.FullName -notmatch '\\test\\' } |
+    ForEach-Object { $_.FullName }
 
 javac -encoding UTF-8 -d $classes $sources
 java -cp $classes com.yarez.banking.Main
 ```
 
-Result: `javac` exited `0` with no warnings, and `java` exited `0`. The run printed 184 lines. All console output quoted later in this README comes from that run, captured on 2026-11-28. UUIDs and `LocalDateTime` values are generated at runtime and will differ on your machine.
-
-### Tests
-
-There are no tests to run. If a `pom.xml` and `src/test` are added later, the usual commands are:
-
-```powershell
-mvn -q test
-```
-
-Today that command only reports the missing POM shown above.
+Result: `javac` exited `0` with no warnings, and `java` exited `0`. The run printed 184 lines. The baseline was captured in `banking-baseline-18.log` before the fixes; after every fix, the output matched it after replacing runtime-generated UUIDs and ISO timestamps with `<UUID>` and `<TIMESTAMP>`. No behavior line changed. All console output quoted later in this README comes from that capture on 2026-11-28. UUIDs and `LocalDateTime` values are generated at runtime and will differ on your machine.
 
 ## 4. Project structure
 
@@ -81,30 +76,41 @@ Today that command only reports the missing POM shown above.
 java-core-banking-simulator/
 ├── .gitignore                         # ignores .idea/, *.iml, out/, target/, *.class
 ├── README.md                          # this study guide
+├── pom.xml                            # Java 21, JUnit 5, source root src
 ├── java-core-banking-simulator.iml    # IntelliJ module; marks src as the source root
 └── src/
-    └── com/yarez/banking/
-        ├── Main.java                      # entry point; runs all 16 demonstrations
-        ├── BankAccount.java               # domain object; ArrayList history, Comparable
-        ├── BankTransaction.java           # immutable transaction record-like class
-        ├── Customer.java                  # mutable customer data
-        ├── AccountRegistry.java           # HashMap<Long, BankAccount>
-        ├── RecentAccountRegistry.java     # LinkedHashMap<Long, BankAccount>
-        ├── SortedAccountRegistry.java     # TreeMap<Long, BankAccount>
-        ├── TransactionRegistry.java       # HashSet<String> of transaction IDs
-        ├── RecentTransactionRegistry.java # LinkedHashSet<String> of transaction IDs
-        ├── SortedTransactionRegistry.java # TreeSet<String> of transaction IDs
-        ├── BankingRequest.java            # FIFO request value object
-        ├── BankingRequestQueue.java       # ArrayDeque as Queue<BankingRequest>
-        ├── PriorityBankingRequest.java    # request plus RequestPriority
-        ├── PriorityBankingRequestQueue.java # PriorityQueue with Comparator
-        ├── RequestPriority.java           # enum HIGH, NORMAL, LOW
-        ├── RecentActivityManager.java     # ArrayDeque as bounded Deque<BankTransaction>
-        ├── AccountSorting.java            # Comparator/Comparable sorting of accounts
-        └── TransactionSorting.java        # Comparator sorting of transactions
+    ├── com/yarez/banking/
+    │   ├── Main.java                      # entry point; runs all 16 demonstrations
+    │   ├── BankAccount.java               # ArrayList history, Comparable, equals/hashCode
+    │   ├── BankTransaction.java           # immutable transaction record-like class
+    │   ├── Customer.java                  # immutable customer value object
+    │   ├── Money.java                     # BigDecimal build/format helper (scale 2, HALF_EVEN)
+    │   ├── AccountRegistry.java           # HashMap<Long, BankAccount>
+    │   ├── RecentAccountRegistry.java     # LinkedHashMap<Long, BankAccount>
+    │   ├── SortedAccountRegistry.java     # TreeMap<Long, BankAccount>
+    │   ├── TransactionRegistry.java       # HashSet<String> of transaction IDs
+    │   ├── RecentTransactionRegistry.java # LinkedHashSet<String> of transaction IDs
+    │   ├── SortedTransactionRegistry.java # NavigableSet<String> backed by TreeSet
+    │   ├── BankingRequest.java            # FIFO request value object
+    │   ├── BankingRequestQueue.java       # ArrayDeque as Queue<BankingRequest>
+    │   ├── PriorityBankingRequest.java    # request plus RequestPriority
+    │   ├── PriorityBankingRequestQueue.java # PriorityQueue with FIFO tie-break
+    │   ├── RequestPriority.java           # enum HIGH, NORMAL, LOW
+    │   ├── RecentActivityManager.java     # ArrayDeque as bounded Deque<BankTransaction>
+    │   ├── AccountSorting.java            # Comparator/Comparable sorting of accounts
+    │   └── TransactionSorting.java        # Comparator sorting of transactions
+    └── test/java/com/yarez/banking/
+        ├── BankAccountEqualityTest.java
+        ├── PriorityBankingRequestQueueTest.java
+        ├── SortedTransactionRegistryTest.java
+        ├── RegistryDuplicateRegistrationTest.java
+        ├── CustomerImmutabilityTest.java
+        ├── MoneyCharacterizationTest.java
+        ├── BigDecimalMoneyTest.java
+        └── TransactionSortingTest.java
 ```
 
-All classes are in the single package `com.yarez.banking`. There is no REST layer, database, concurrency layer, or test source.
+All production classes are in the single package `com.yarez.banking`; the tests mirror that package. There is no REST layer, database, or concurrency layer.
 
 ## 5. Collections at a glance
 
@@ -115,10 +121,11 @@ Every collection type used in the code is listed below. "Declared as" shows whet
 | `List` | Interface: `List<BankTransaction>`, `List<BankAccount>` | `BankAccount.java`, `RecentActivityManager.java`, `Main.java`, `AccountSorting.java`, `TransactionSorting.java` | Transaction history, immutable snapshots, sortable working lists | Ordered sequence with iteration and in-place sorting | `add` end amortized O(1); indexed `get` O(1) on `ArrayList` / O(n) on `LinkedList`; full iteration O(n); `sort` O(n log n) worst; `List.copyOf` O(n) | Not thread-safe; no concurrent access |
 | `ArrayList` | Concrete backing for `List` | `BankAccount.java`, `Main.java` | Append-only history and mutable copies for sorting | Contiguous array: compact, cache-friendly, O(1) indexed access | `add` end amortized O(1); iteration O(n); `sort` O(n log n) | Not thread-safe |
 | `LinkedList` | Concrete local variable | `Main.java` | Step list and pending-request examples using both ends | `addFirst`/`removeFirst`/`addLast`/`removeLast` are O(1) | End insert/remove O(1); iteration O(n); `getFirst`/`getLast` O(1) | Not thread-safe |
-| `Set` | Interface: `Set<String>` | `TransactionRegistry.java`, `RecentTransactionRegistry.java`, `SortedTransactionRegistry.java` | Unique transaction IDs | Membership without duplicates | Same as backing implementation | Depends on implementation; all usages single-threaded |
+| `Set` | Interface: `Set<String>` | `TransactionRegistry.java`, `RecentTransactionRegistry.java` | Unique transaction IDs | Membership without duplicates | Same as backing implementation | Depends on implementation; all usages single-threaded |
+| `NavigableSet` | Interface: `NavigableSet<String>` | `SortedTransactionRegistry.java` | Sorted transaction IDs with `first()`/`last()` | Declares the sorted-order requirement without a cast | Same as `TreeSet` backing | Not thread-safe |
 | `HashSet` | Concrete backing for `Set` | `TransactionRegistry.java` | Reject duplicate transaction IDs | No order needed; average O(1) `add`/`contains` | `add`, `contains`, `size` average O(1); iteration O(n) | Not thread-safe |
 | `LinkedHashSet` | Concrete backing for `Set` | `RecentTransactionRegistry.java` | Recent transaction IDs in registration order | Keeps insertion order without sorting | `add`, `contains`, `remove` average O(1); iteration O(n) | Not thread-safe |
-| `TreeSet` | Concrete backing for `Set` | `SortedTransactionRegistry.java` | Sorted transaction IDs and first/last ID | Maintains sorted order; exposes `first()`/`last()` | `add`, `contains`, `remove` O(log n); `first`/`last` O(log n); iteration O(n) | Not thread-safe |
+| `TreeSet` | Concrete backing for `NavigableSet` | `SortedTransactionRegistry.java` | Sorted transaction IDs and first/last ID | Maintains sorted order; exposes `first()`/`last()` | `add`, `contains`, `remove` O(log n); `first`/`last` O(log n); iteration O(n) | Not thread-safe |
 | `Map` | Interface: `Map<Long, BankAccount>` | `AccountRegistry.java`, `RecentAccountRegistry.java` | Account number → account lookup | Key-based lookup | Same as backing implementation | Depends on implementation; all usages single-threaded |
 | `HashMap` | Concrete backing for `Map` | `AccountRegistry.java` | General account registry | No ordering requirement; average O(1) lookup | `put`, `get`, `containsKey`, `remove` average O(1); iteration O(n) | Not thread-safe |
 | `LinkedHashMap` | Concrete backing for `Map` | `RecentAccountRegistry.java` | Recently registered accounts in insertion order | Predictable iteration order for display | `put`, `get`, `containsKey`, `remove` average O(1); iteration O(n) | Not thread-safe |
@@ -126,11 +133,11 @@ Every collection type used in the code is listed below. "Declared as" shows whet
 | `Queue` | Interface: `Queue<BankingRequest>` | `BankingRequestQueue.java` | FIFO pending requests | Poll in arrival order | `offer`, `poll`, `peek` O(1); iteration O(n) | Not thread-safe |
 | `Deque` | Interface: `Deque<BankTransaction>` | `RecentActivityManager.java` | Bounded newest-first activity log | Add newest at front, evict oldest at back | `addFirst`, `removeLast`, `peekFirst` O(1); iteration O(n) | Not thread-safe |
 | `ArrayDeque` | Concrete backing for `Queue` and `Deque` | `BankingRequestQueue.java`, `RecentActivityManager.java` | FIFO queue and bounded recent-activity deque | Resizable circular array; no per-node allocation | End operations amortized O(1); iteration O(n) | Not thread-safe |
-| `PriorityQueue` | Concrete class declared directly | `PriorityBankingRequestQueue.java` | Requests ordered by `RequestPriority` | Binary heap gives priority order on `poll` | `offer`/`poll` O(log n); `peek` O(1); iteration O(n) | Not thread-safe |
+| `PriorityQueue` | Concrete class declared directly | `PriorityBankingRequestQueue.java` | Requests ordered by `RequestPriority`, then FIFO sequence | Binary heap gives priority order on `poll`; a monotonic sequence breaks equal-priority ties | `offer`/`poll` O(log n); `peek` O(1); iteration O(n) | Not thread-safe |
 | `Comparable` | Interface implemented by `BankAccount` | `BankAccount.java` | Natural order by account number | Enables `Comparator.naturalOrder()` | `compareTo` O(1) | Stateless |
 | `Comparator` | Interface / factory methods | `AccountSorting.java`, `TransactionSorting.java`, `PriorityBankingRequestQueue.java` | Alternate sort orders and priority order | Separates ordering from the domain class | Key extraction O(1); `List.sort` O(n log n) worst | Stateless |
 
-`BigDecimal`, records, streams, `Collectors`, `Collections.*`, `Arrays.*`, explicit `Iterator`/`ListIterator`, `removeIf`, `computeIfAbsent`, `merge`, `putIfAbsent`, `getOrDefault`, and `replaceAll` are **not used** in this project. The `Not covered yet` section mentions them only as suggestions.
+`Money.java` uses `BigDecimal` with scale 2 and `RoundingMode.HALF_EVEN`, and the three account registries use `putIfAbsent`. Records, streams, `Collectors`, `Collections.*`, `Arrays.*`, explicit `Iterator`/`ListIterator`, `removeIf`, `computeIfAbsent`, `merge`, `getOrDefault`, and `replaceAll` are **not used** in production code. The `Not covered yet` section mentions those only as suggestions.
 
 ## 6. Collection families in detail
 
@@ -157,7 +164,7 @@ public class BankAccount implements Comparable<BankAccount> {
         BankTransaction deposit = new BankTransaction(
                UUID.randomUUID(),// System.currentTimeMillis(),
                 "DEPOSIT",
-                amount,
+                value,
                 LocalDateTime.now(),
                 balance
         );
@@ -168,7 +175,7 @@ The account appends one `BankTransaction` per successful deposit or withdrawal a
 
 Costs: `add` at the end amortized O(1); iteration O(n); `displayTransactionHistory` O(n); `List.copyOf` O(n).
 
-Captured output from `Main` after `deposit(2500)`, `withdraw(3000)`, `withdraw(6000)`, `withdraw(5001)`, and `withdraw(5000)`:
+Captured output from `Main` after `deposit(Money.of("2500"))`, `withdraw(Money.of("3000"))`, `withdraw(Money.of("6000"))`, `withdraw(Money.of("5001"))`, and `withdraw(Money.of("5000"))`:
 
 ```text
 Deposit successful.
@@ -219,15 +226,15 @@ All operations: [Verify customer, Validate account, Process deposit]
         LinkedList<BankingRequest> pendingRequests = new LinkedList<>();
 
         pendingRequests.addLast(
-                new BankingRequest(1001, "John", "DEPOSIT", 5000)
+                new BankingRequest(1001, "John", "DEPOSIT", Money.of("5000"))
         );
 
         pendingRequests.addLast(
-                new BankingRequest(1002, "Mary", "WITHDRAWAL", 2000)
+                new BankingRequest(1002, "Mary", "WITHDRAWAL", Money.of("2000"))
         );
 
         pendingRequests.addLast(
-                new BankingRequest(1003, "David", "TRANSFER", 3000)
+                new BankingRequest(1003, "David", "TRANSFER", Money.of("3000"))
         );
 ```
 
@@ -410,20 +417,20 @@ Total recent transactions: 4
 `src/com/yarez/banking/SortedTransactionRegistry.java`
 
 ```java
-    private final Set<String> transactionIds = new TreeSet<>();
+    private final NavigableSet<String> transactionIds = new TreeSet<>();
 ```
 
 ```java
     public String getFirstTransaction() {
-        return transactionIds.isEmpty() ? null : ((TreeSet<String>) transactionIds).first();
+        return transactionIds.isEmpty() ? null : transactionIds.first();
     }
 
     public String getLastTransaction() {
-        return transactionIds.isEmpty() ? null : ((TreeSet<String>) transactionIds).last();
+        return transactionIds.isEmpty() ? null : transactionIds.last();
     }
 ```
 
-This registry needs its IDs sorted on every display and needs the smallest and largest IDs. `TreeSet` maintains that order on insertion, so display is already sorted and `first()`/`last()` are direct. `HashSet` and `LinkedHashSet` cannot answer extreme-value questions; sorting an `ArrayList` for each display would cost O(n log n) every time instead of paying O(log n) per insertion once.
+This registry needs its IDs sorted on every display and needs the smallest and largest IDs. Declaring the field as `NavigableSet` documents that requirement and removes the old `TreeSet` cast; the backing implementation is still `TreeSet`. Sorted iteration and `first()`/`last()` therefore keep their previous behavior. `HashSet` and `LinkedHashSet` cannot answer extreme-value questions; sorting an `ArrayList` for each display would cost O(n log n) every time instead of paying O(log n) per insertion once.
 
 Costs: `add`, `contains`, `remove` O(log n); `first`/`last` O(log n); sorted iteration O(n); `size`/`isEmpty` O(1).
 
@@ -455,7 +462,7 @@ Last transaction: TXN-1008
 | `TreeSet` natural ordering inconsistent with `equals` | Avoided: `String.compareTo` is consistent with `String.equals`. |
 | `null` elements | Avoided in practice: all three registries reject `null` and blank IDs before `add`. `TreeSet` would throw anyway under natural ordering. |
 | Fail-fast iterators modified during iteration | Avoided: display loops only print. |
-| Declaring a `Set` and casting back to `TreeSet` | Present in `SortedTransactionRegistry.getFirstTransaction()`/`getLastTransaction()`. It is currently safe because the private `final` field is always a `TreeSet`, but declaring `NavigableSet` would remove the cast. See [Review notes](#11-review-notes). |
+| Declaring a `Set` and casting back to `TreeSet` | Avoided: `SortedTransactionRegistry` declares `NavigableSet<String>` and calls `first()`/`last()` directly. See [Review notes](#11-review-notes). |
 
 #### Interview questions — sets
 
@@ -485,17 +492,17 @@ Last transaction: TXN-1008
 ```java
         long accountNumber = account.getAccountNumber();
 
-        if (accounts.containsKey(accountNumber)) {
+        BankAccount existing = accounts.putIfAbsent(accountNumber, account);
+
+        if (existing != null) {
             System.out.println("Account already registered: " + accountNumber);
             return false;
         }
-
-        accounts.put(accountNumber, account);
 ```
 
-The registry maps an account number to its `BankAccount` and answers "find account 10000002" in average O(1). `TreeMap` would be O(log n) and is unnecessary without sorted output; `LinkedHashMap` would pay for order the general registry does not display predictably; a `List` scan would be O(n).
+The registry maps an account number to its `BankAccount` and answers "find account 10000002" in average O(1). `TreeMap` would be O(log n) and is unnecessary without sorted output; `LinkedHashMap` would pay for order the general registry does not display predictably; a `List` scan would be O(n). The same `putIfAbsent` pattern is used in `RecentAccountRegistry` and `SortedAccountRegistry`, with the original duplicate message and return values preserved.
 
-Costs: `containsKey` average O(1); `put` average O(1); `get` average O(1); `size` O(1); `entrySet` iteration O(n). Note that registration currently performs two lookups (`containsKey` then `put`).
+Costs: one conditional `putIfAbsent` average O(1); `get` average O(1); `size` O(1); `entrySet` iteration O(n). The old `containsKey`-then-`put` version used two lookups per registration.
 
 ```text
 Account registered: 10000001
@@ -599,7 +606,7 @@ Largest account number: 10000003
 | Assuming `HashMap` iteration order | Avoided: only `HashMap` registry displays entries, and it makes no ordering claim. |
 | TreeMap comparator inconsistent with `equals` | Avoided: natural `Long` ordering is consistent with `Long.equals`. |
 | Autoboxing surprises | `long` is boxed to `Long`; lookups use primitive `long`, which boxes to an equal `Long`. Small cached values and large values both work because equality is by value. |
-| Double lookup in register methods | Present in `AccountRegistry`, `RecentAccountRegistry`, and `SortedAccountRegistry`: `containsKey` followed by `put`. One conditional put would halve the lookup work. See [Review notes](#11-review-notes). |
+| Double lookup in register methods | Avoided: the three account registries use `putIfAbsent`, so registration is one conditional lookup. The characterization test checks the duplicate return value and message stayed identical. See [Review notes](#11-review-notes). |
 | Exposing the internal map | Avoided: no getter returns `accounts`; only display and single-value find methods exist. |
 
 #### Interview questions — maps
@@ -614,7 +621,7 @@ Largest account number: 10000003
 
 #### How queues and deques work here
 
-`ArrayDeque` uses a resizable circular array. `offer`/`poll` at the head/tail are amortized O(1), it rejects `null` elements, and it usually beats `LinkedList` for queues because there is no node allocation per element. Declaring a field as `Queue` or `Deque` exposes only the intended operations. `PriorityQueue` is a binary heap, also stored in an array: `offer`/`poll` are O(log n), `peek` is O(1), and **iteration is not priority order**. Its constructor here takes `Comparator.comparing(PriorityBankingRequest::getPriority)`, and enum natural order is declaration order: `HIGH`, `NORMAL`, `LOW`.
+`ArrayDeque` uses a resizable circular array. `offer`/`poll` at the head/tail are amortized O(1), it rejects `null` elements, and it usually beats `LinkedList` for queues because there is no node allocation per element. Declaring a field as `Queue` or `Deque` exposes only the intended operations. `PriorityQueue` is a binary heap, also stored in an array: `offer`/`poll` are O(log n), `peek` is O(1), and **iteration is not priority order**. Its constructor compares `RequestPriority` first (enum declaration order: `HIGH`, `NORMAL`, `LOW`) and then a monotonically increasing sequence number, so equal-priority requests are FIFO.
 
 #### 6.4.1 `ArrayDeque` as `Queue<BankingRequest>`
 
@@ -661,17 +668,24 @@ Remaining requests: 2
 `src/com/yarez/banking/PriorityBankingRequestQueue.java`
 
 ```java
-    private final PriorityQueue<PriorityBankingRequest> requests =
+    private static final class QueuedRequest {
+        private final PriorityBankingRequest request;
+        private final long sequence;
+    }
+
+    private long nextSequence;
+
+    private final PriorityQueue<QueuedRequest> requests =
             new PriorityQueue<>(
                     Comparator.comparing(
-                            PriorityBankingRequest::getPriority
-                    )
+                            (QueuedRequest entry) -> entry.request.getPriority()
+                    ).thenComparingLong(entry -> entry.sequence)
             );
 ```
 
-Fraud investigation and account blocking (`HIGH`) are served before normal deposits and low-priority statements. A `PriorityQueue` keeps the heap property on every `offer`/`poll` at O(log n); keeping a list sorted on insertion would be O(n) per insert. A plain `ArrayDeque` would process in arrival order, which would serve the `NORMAL` request 2001 first — the captured output shows it third.
+The sequence number is assigned when `addRequest` is called and is never reused, so it is a deterministic FIFO tie-break. `displayPendingRequests()` copies the queue into a second `PriorityQueue` with the same comparator and polls that copy; the real queue is not emptied or reordered. Fraud investigation and account blocking (`HIGH`) are served before normal deposits and low-priority statements, and the two `HIGH` requests now poll in insertion order (2002 then 2004). A plain `ArrayDeque` would process in arrival order, which would serve `NORMAL` request 2001 first — the captured output shows it third.
 
-Costs: `offer` O(log n); `poll` O(log n); `peek` O(1); iteration O(n).
+Costs: `offer` O(log n); `poll` O(log n); `peek` O(1); display copy plus sorted draining O(n log n); heap-array iteration O(n).
 
 ```text
 Request added: 2001 | Priority: NORMAL
@@ -734,8 +748,8 @@ Only three transactions existed, so the eviction branch did not run in this capt
 
 | Pitfall | Does this repo hit it? |
 | --- | --- |
-| Iterating a `PriorityQueue` expecting priority order | `displayPendingRequests()` exists in `PriorityBankingRequestQueue` but is not called by `Main`. It would print heap-array order, not sorted priority order. See [Review notes](#11-review-notes). |
-| Equal-priority order assumed to be FIFO | The comparator only compares `getPriority()`. Captured output happened to poll 2002 before 2004, but `PriorityQueue` does not guarantee that. |
+| Iterating a `PriorityQueue` expecting priority order | Avoided: `displayPendingRequests()` drains a sorted copy with `poll`, so it prints true priority order and leaves the real queue untouched. It is still not called by `Main`. See [Review notes](#11-review-notes). |
+| Equal-priority order assumed to be FIFO | Avoided: the comparator adds a monotonically increasing sequence after `getPriority()`, so ties are insertion-ordered. |
 | `ArrayDeque` rejects `null` | Handled: `addRequest` and `addActivity` return `false` for `null` before calling the deque. |
 | `poll`/`peek` on an empty collection | Handled: both queue classes print a message and return `null` when `poll` finds nothing; `getLatestActivity` does the same. |
 | `offer` vs `add` on bounded queues | `offer` is used. These deques are unbounded, so it always returns `true` unless the element is invalid. |
@@ -745,8 +759,8 @@ Only three transactions existed, so the eviction branch did not run in this capt
 
 1. **Why `ArrayDeque` instead of `LinkedList` for a FIFO queue?** Both are O(1) at the ends, but `ArrayDeque` has no node per element and better locality.
 2. **What does `PriorityQueue.offer` cost?** O(log n) to sift the new element into the heap. `peek` is O(1) because the root is already the smallest element by the comparator.
-3. **Does iterating a `PriorityQueue` give priority order?** No. Only `poll`/`peek` respect the heap. This is why the priority demo uses a `while (!isEmpty())` poll loop.
-4. **Why is `HIGH` served first with `Comparator.comparing(...getPriority())`?** Enum `compareTo` uses declaration order, and `RequestPriority` declares `HIGH, NORMAL, LOW`.
+3. **Does iterating a `PriorityQueue` give priority order?** No. Only `poll`/`peek` respect the heap. That is why `displayPendingRequests()` drains a copy and the `Main` demo uses a `while (!isEmpty())` poll loop.
+4. **Why is `HIGH` served first, and why add a sequence key?** Enum `compareTo` uses declaration order (`HIGH, NORMAL, LOW`); the sequence key makes two `HIGH` requests deterministic FIFO instead of relying on heap-array layout.
 5. **How do you build a bounded "last N" view?** `RecentActivityManager`: `addFirst` the new item, and when `size() > MAX_ACTIVITIES`, `removeLast()` the oldest.
 
 ### 6.5 Utilities: ordering and immutability
@@ -776,7 +790,27 @@ Only three transactions existed, so the eviction branch did not run in this capt
     }
 ```
 
-Natural order is account number. This is what `Comparator.naturalOrder()` uses in `AccountSorting.sortByAccountNumber`.
+Natural order is account number. This is what `Comparator.naturalOrder()` uses in `AccountSorting.sortByAccountNumber`. Equality uses the same field, so `compareTo == 0` if and only if `equals` is true:
+
+```java
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+        if (!(other instanceof BankAccount that)) {
+            return false;
+        }
+        return accountNumber == that.accountNumber;
+    }
+
+    @Override
+    public int hashCode() {
+        return Long.hashCode(accountNumber);
+    }
+```
+
+Customer, balance, and active state are operational data and are deliberately excluded from identity: an account is identified only by its number.
 
 ```text
 Accounts sorted by account number.
@@ -796,20 +830,20 @@ Account Number: 10000003 | Customer: David | Balance: 35000
 
 ```java
         accounts.sort(
-                Comparator.comparingInt(BankAccount::getBalance)
+                Comparator.comparing(BankAccount::getBalance)
                         .reversed()
         );
 ```
 
 ```java
         Comparator<BankAccount> comparator =
-                Comparator.comparingInt(BankAccount::getBalance)
+                Comparator.comparing(BankAccount::getBalance)
                         .thenComparingLong(BankAccount::getAccountNumber);
 
         accounts.sort(comparator);
 ```
 
-One mutable `ArrayList` is sorted four different ways without changing `BankAccount`. `Comparator.comparingInt` avoids boxing the balance; `thenComparingLong` breaks ties by account number. A class implementing every possible order as `Comparable` would be less flexible.
+One mutable `ArrayList` is sorted four different ways without changing `BankAccount`. `Comparator.comparing(BankAccount::getBalance)` extracts a `BigDecimal` key; `thenComparingLong` breaks ties by account number. A class implementing every possible order as `Comparable` would be less flexible.
 
 Costs: comparator construction O(1), key extraction O(1), each `List.sort` O(n log n) worst case.
 
@@ -835,21 +869,21 @@ Account Number: 10000003 | Customer: David | Balance: 35000
 
 ```java
         transactions.sort(
-                Comparator.comparingInt(BankTransaction::getAmount)
+                Comparator.comparing(BankTransaction::getAmount)
         );
 ```
 
 ```java
         Comparator<BankTransaction> comparator =
                 Comparator.comparing(BankTransaction::getType)
-                        .thenComparingInt(BankTransaction::getAmount);
+                        .thenComparing(BankTransaction::getAmount);
 
         transactions.sort(comparator);
 ```
 
 Transactions can be viewed by amount, timestamp, or type then amount. The comparators are stateless and reusable; the list is a mutable copy of an immutable snapshot, so the account's own history is untouched.
 
-Costs: extracting `int` keys O(1), extracting `String`/`LocalDateTime` keys O(1) reference read, each sort O(n log n) worst case.
+Costs: extracting `BigDecimal` keys O(1) reference read, extracting `String`/`LocalDateTime` keys O(1) reference read, each sort O(n log n) worst case.
 
 ```text
 Transactions sorted by amount (descending).
@@ -867,7 +901,7 @@ BankTransaction{transactionId=2979adec-b257-4ec3-8941-4e16f2f6da6c, type='WITHDR
 BankTransaction{transactionId=2af7b09a-104d-4f54-99dd-be3a09c05166, type='WITHDRAWAL', amount=5000, timestamp=2026-11-28T13:25:30.848638400, balanceAfter=4500}
 ```
 
-In this capture all three `LocalDateTime` values are identical, so the timestamp-ascending and timestamp-descending displays show the same order as each other. That is a property of the captured run, not a claim that timestamps are unique.
+In this capture all three `LocalDateTime` values are identical, so the timestamp-ascending and timestamp-descending displays show the same order as each other. That is a property of the captured run, not a claim that timestamps are unique. `TransactionSortingTest` passes distinct explicit timestamps to `BankTransaction` and verifies both timestamp directions, so the comparator is covered even though the demo data is not.
 
 #### 6.5.4 `List.copyOf` snapshots
 
@@ -897,8 +931,8 @@ Both getters return an immutable snapshot in the container's current iteration o
 | Pitfall | Does this repo hit it? |
 | --- | --- |
 | `Comparator.comparing` with `null` keys throws | Avoided in practice: `BankTransaction.type` is validated non-blank in its constructor, and `RequestPriority` is validated non-null. `BankAccount.customer` is not validated, but it is never used as a sort key. |
-| `Comparable` inconsistent with `equals` | `BankAccount.compareTo` uses only `accountNumber` and `BankAccount` has no `equals`. This is safe while accounts are only sorted in a `List` and used as map **values**; it would be unsafe as a `TreeSet` element or `TreeMap` key. See [Review notes](#11-review-notes). |
-| Applying `reversed()` at the wrong point in a chain | Avoided: `.comparingInt(...).reversed()` reverses the whole single-key comparison; the compound sort uses `thenComparingLong` without `reversed()`. |
+| `Comparable` inconsistent with `equals` | Avoided: `compareTo`, `equals`, and `hashCode` all use only `accountNumber`. A `TreeSet` and a `HashSet` now treat two accounts with the same number as the same element. See [Review notes](#11-review-notes). |
+| Applying `reversed()` at the wrong point in a chain | Avoided: `.comparing(...).reversed()` reverses the whole single-key comparison; the compound sort uses `thenComparingLong` without `reversed()`. |
 | Immutable view vs copy confusion | Avoided: both getters use `List.copyOf` and therefore return snapshots. |
 | Sorting a `List.of(...)` or `List.copyOf(...)` in place | Avoided: `Main` creates a new `ArrayList` before sorting. |
 
@@ -908,23 +942,26 @@ Both getters return an immutable snapshot in the container's current iteration o
 2. **What does `thenComparingLong` buy you?** A deterministic tie-break without boxing, e.g. equal balances ordered by account number.
 3. **Is `List.sort` stable?** Yes, TimSort is stable: equal elements keep their relative order.
 4. **What is the difference between `Collections.unmodifiableList(list)` and `List.copyOf(list)`?** The first is a view that reflects later changes to `list`; the second is an independent immutable snapshot.
-5. **Why does `reversed()` after `comparingInt` work but need care with `thenComparing`?** `reversed()` reverses the comparator built so far; placing it before adding a secondary key changes which parts are reversed.
+5. **Why does `reversed()` after `comparing` work but need care with `thenComparing`?** `reversed()` reverses the comparator built so far; placing it before adding a secondary key changes which parts are reversed.
 
 ## 7. Money and keys
 
-There is no `BigDecimal` anywhere in the project and no `record` declarations. Balances, amounts, and withdrawal limits are all `int` (`WITHDRAWAL_LIMIT = 5000` in `BankAccount`). This is a teaching simplification; the collection behavior is unaffected, but it is a domain limitation noted in [Review notes](#11-review-notes).
+`Money.java` is the single place that builds and formats monetary values. Balances, transaction amounts, balances-after, and request amounts are `BigDecimal` with scale 2 and `RoundingMode.HALF_EVEN`. Values are built with `Money.of(String)` (or `Money.of(BigDecimal)`); the `BigDecimal(double)` constructor is never used. `Money.format` prints whole amounts without a decimal part (`2500`) and keeps cents when present (`10.30`), so the `Main` layout is unchanged. The old `int` overloads remain for compatibility with the characterization tests.
+
+There are still no `record` declarations. `BankAccount.WITHDRAWAL_LIMIT` is `Money.of(5000)`, i.e. `5000.00` internally.
 
 What the collections actually use as keys and ordered elements:
 
 | Value | Role | Equality / ordering | Why it matters |
 | --- | --- | --- | --- |
-| `String` transaction ID | Element of `HashSet`, `LinkedHashSet`, `TreeSet` | `String.equals`/`hashCode` and `String.compareTo` are immutable and mutually consistent | Duplicate rejection and `TreeSet` sorting work without a custom key class. |
+| `String` transaction ID | Element of `HashSet`, `LinkedHashSet`, `NavigableSet` | `String.equals`/`hashCode` and `String.compareTo` are immutable and mutually consistent | Duplicate rejection and sorted `first()`/`last()` work without a custom key class. |
 | `Long` account number | Key in `HashMap`, `LinkedHashMap`, `TreeMap` | Immutable, value-based `equals`/`hashCode`; natural order consistent with `equals` | Lookups by primitive `long` box to an equal `Long`; sorted maps order correctly. |
-| `RequestPriority` enum | Comparator key in `PriorityQueue` | Enum natural order is declaration order: `HIGH`, `NORMAL`, `LOW` | Determines which request `poll` returns first. |
-| `BankAccount` | Element of `List`; value in maps | Implements `Comparable<BankAccount>` by `accountNumber`; **no `equals`/`hashCode` override** | Works for `List.sort`; would be a bug if used as a `Set` element or map key without adding matching `equals`/`hashCode`. |
+| `RequestPriority` enum | Primary comparator key in `PriorityQueue` | Enum natural order is declaration order: `HIGH`, `NORMAL`, `LOW` | Determines which request `poll` returns first; a sequence number breaks ties. |
+| `BankAccount` | Element of `List`, `HashSet`, and `TreeSet`; value in maps | `compareTo`, `equals`, and `hashCode` all use only `accountNumber` | Natural order and identity are consistent, so both set implementations agree. |
 | `BankTransaction` | Element of `ArrayList` and `ArrayDeque` | All five fields are `final`; **no `equals`/`hashCode` override** | Safe as a list/deque element; if deduplicated by `transactionId` in a `Set`, equality would need to be defined. |
+| `BigDecimal` | Balance/amount value and comparator key | Immutable; `compareTo` is consistent with `equals`, which also considers scale | All values are normalized to scale 2 by `Money`, so sorting and display are stable. |
 
-`Customer` is mutable (it has setters for every field) and is stored by reference inside `BankAccount`. It is not used as a collection key today, so its missing `equals`/`hashCode` has no effect on current behavior.
+`Customer` is immutable: its fields are `final`, it has no setters, and `BankAccount` holds the instance created by the caller. Mutating a `Customer` after account creation is therefore impossible. It is not used as a collection key, so it needs no `equals`/`hashCode`.
 
 ## 8. Concurrency and collections
 
@@ -960,15 +997,15 @@ So there is no collector or stream result type to explain. `List.copyOf` in the 
 | Demonstrate insert/remove at both ends | `LinkedList` (`Main` step list) | `addFirst`/`removeFirst`/`addLast`/`removeLast` are O(1) |
 | Reject duplicate transaction IDs without caring about order | `HashSet` (`TransactionRegistry`) | Average O(1) `add` and `contains` |
 | Keep unique IDs in the order they arrived | `LinkedHashSet` (`RecentTransactionRegistry`) | Uniqueness plus insertion-order iteration |
-| Keep IDs sorted and read first/last | `TreeSet` (`SortedTransactionRegistry`) | Maintained order; `first()`/`last()` O(log n) |
+| Keep IDs sorted and read first/last | `NavigableSet` backed by `TreeSet` (`SortedTransactionRegistry`) | Maintained order; `first()`/`last()` O(log n) without a cast |
 | Look up an account by number quickly | `HashMap` behind `Map` (`AccountRegistry`) | Average O(1) `get` on an immutable `Long` key |
 | Show recently registered accounts in insertion order | `LinkedHashMap` (`RecentAccountRegistry`) | Predictable iteration with O(1) average lookup |
 | List accounts by number and get min/max | `TreeMap` (`SortedAccountRegistry`) | Sorted keys plus `firstKey()`/`lastKey()` |
 | Process requests FIFO | `ArrayDeque` behind `Queue` (`BankingRequestQueue`) | Amortized O(1) `offer`/`poll`, no node allocation |
-| Process urgent requests before routine ones | `PriorityQueue` + `Comparator` (`PriorityBankingRequestQueue`) | O(log n) priority ordering on `poll` |
+| Process urgent requests before routine ones | `PriorityQueue` + two-key `Comparator` (`PriorityBankingRequestQueue`) | O(log n) priority ordering on `poll`, FIFO for ties |
 | Keep the newest N activities | `ArrayDeque` behind `Deque` (`RecentActivityManager`) | O(1) `addFirst` and eviction from the back |
 | Hand out an immutable history to callers | `List.copyOf` (`BankAccount`, `RecentActivityManager`) | Snapshot prevents structural mutation of internal state |
-| Sort by more than one field | `Comparator` with `thenComparingInt`/`thenComparingLong` (`AccountSorting`, `TransactionSorting`) | External order, no changes to the domain class |
+| Sort by more than one field | `Comparator` with `thenComparing`/`thenComparingLong` (`AccountSorting`, `TransactionSorting`) | External order, no changes to the domain class |
 
 ```mermaid
 flowchart TD
@@ -995,19 +1032,19 @@ flowchart TD
 
 ## 11. Review notes
 
-These are factual observations about the current code. No source file was changed.
+Each resolved item was handled test-first on `fix/collections-review`: a red or characterization test commit, then the fix commit. The console output of `Main` is unchanged after masking runtime-generated UUIDs and timestamps.
 
-1. **`SortedTransactionRegistry` declares `Set` but casts to `TreeSet`.** `src/com/yarez/banking/SortedTransactionRegistry.java` uses `((TreeSet<String>) transactionIds).first()` and `.last()`. The cast is currently safe because the field is `private final` and always initialized with `new TreeSet<>()`, but declaring the field as `NavigableSet<String>` would express the requirement and remove the cast.
-2. **Priority ties have no deterministic order.** `src/com/yarez/banking/PriorityBankingRequestQueue.java` compares only `getPriority()`. The capture polled request 2002 before 2004, both `HIGH`, but `PriorityQueue` does not promise that. A secondary key such as request ID would make the order reproducible.
-3. **`PriorityBankingRequestQueue.displayPendingRequests()` iterates a `PriorityQueue`.** That iteration is heap-array order, not priority order. The method is not called from `Main`, so it did not appear in the captured run, but the name could mislead a reader.
-4. **`HashSet` display order is not stable by contract.** `src/com/yarez/banking/TransactionRegistry.java` printed `TXN-1001, TXN-1004, TXN-1002, TXN-1003` in this run. The code is correct because it never relies on order; a reader should not treat that sequence as meaningful.
-5. **`BankAccount` has `compareTo` but no `equals`/`hashCode`.** `src/com/yarez/banking/BankAccount.java` orders purely by `accountNumber`. That is fine for `List.sort` and for its role as a map value, but it violates the usual "consistent with equals" expectation if the class is later placed in a `TreeSet` or used as a map key.
-6. **`BankTransaction` has no `equals`/`hashCode`** in `src/com/yarez/banking/BankTransaction.java`. Its fields are `final`, so current use in `ArrayList`/`ArrayDeque` is safe. Deduplicating transactions by `transactionId` in a set would require an explicit equality definition.
-7. **`Customer` is mutable and shared by reference.** `src/com/yarez/banking/Customer.java` exposes setters for all fields, and `BankAccount` stores the same `Customer` instance. A name change after account registration changes what `displayAllAccounts()` prints. `Customer` is not used as a key, so hashing is unaffected.
-8. **Registration does two map lookups.** `AccountRegistry`, `RecentAccountRegistry`, and `SortedAccountRegistry` each call `containsKey` and then `put`. A single conditional put would reduce that to one lookup per registration. At three accounts the cost is irrelevant, but it matters if the registry grows.
-9. **Money is stored as `int`.** `BankAccount` and `BankTransaction` use `int` for balances and amounts. This is not a collections defect, but it is a correctness limitation for a banking domain (no fractional currency and possible overflow).
-10. **All captured transaction timestamps were identical.** `LocalDateTime.now()` is called in a tight loop in `BankAccount.deposit`/`withdraw`, so the timestamp-sort scenarios produced no visible reorder in this run. The comparators are implemented; the sample data just did not distinguish them.
-11. **The internal collections are not exposed.** No registry getter returns its `Set` or `Map`, and both list getters return `List.copyOf`. This is a good practice worth keeping; [Not covered yet](#12-not-covered-yet) mentions `Collections.unmodifiableX` for cases where a live read-only view is wanted instead.
+1. **Resolved — `SortedTransactionRegistry` declared `Set` but cast to `TreeSet`.** Commit `438a74e` changes the field to `NavigableSet<String>` and calls `first()`/`last()` directly. Characterization: `32c2107`. Test: [SortedTransactionRegistryTest](src/test/java/com/yarez/banking/SortedTransactionRegistryTest.java).
+2. **Resolved — priority ties had no deterministic order.** Commit `f9ec606` wraps each request with a monotonically increasing sequence and uses it as the secondary comparator key, so equal priorities dequeue FIFO. Red test: `6d83582`. Test: [PriorityBankingRequestQueueTest](src/test/java/com/yarez/banking/PriorityBankingRequestQueueTest.java). (The body of commit `6d83582` has a typo: the observed display order was `[2002, 2004, 2003, 2001]`, not `[2002, 2004, 2003, 1]`.)
+3. **Resolved — `displayPendingRequests()` iterated the heap array.** The same fix `f9ec606` drains a sorted copy so display is in true priority order and does not remove or reorder the real queue. Covered by [PriorityBankingRequestQueueTest](src/test/java/com/yarez/banking/PriorityBankingRequestQueueTest.java). `Main` does not call this method, so console output is unchanged.
+4. **Still true — `HashSet` display order is not stable by contract.** `TransactionRegistry` printed `TXN-1001, TXN-1004, TXN-1002, TXN-1003`; the code never relies on that order, so it was deliberately not changed.
+5. **Resolved — `BankAccount` had `compareTo` without `equals`/`hashCode`.** Commit `cf992b9` implements both from `accountNumber`, the same field as `compareTo`. Customer, balance, and active state are excluded because account number is identity. Red test: `6e08f0c`. Test: [BankAccountEqualityTest](src/test/java/com/yarez/banking/BankAccountEqualityTest.java).
+6. **Still true — `BankTransaction` has no `equals`/`hashCode`.** Its fields are `final`, so list/deque use is safe; deduplicating by `transactionId` would require an explicit equality definition. No code does that today, so no change was made.
+7. **Resolved — `Customer` was mutable and shared by reference.** Commit `865f1f6` makes it immutable (`final` fields, no setters); no production call site used a setter, and the no-arg defaults are preserved. Red test: `8e2feee`. Test: [CustomerImmutabilityTest](src/test/java/com/yarez/banking/CustomerImmutabilityTest.java).
+8. **Resolved — three account registries did `containsKey` then `put`.** Commit `374cb61` uses `putIfAbsent` and preserves the duplicate return value and message. The transaction registries already used `Set.add`'s boolean and needed no change. Characterization: `add1633`. Test: [RegistryDuplicateRegistrationTest](src/test/java/com/yarez/banking/RegistryDuplicateRegistrationTest.java).
+9. **Resolved — money was stored as `int`.** Commits `c75a0c6` (characterization), `768cc18` (red), and `651d189` (fix) migrate balances and amounts to `BigDecimal` with scale 2 and `RoundingMode.HALF_EVEN`. `Money.of` builds values from `String`/`BigDecimal` only, and `Money.format` preserves the old whole-number layout. No double constructor is used. Output is unchanged for the `Main` values; cents and very large values are now exact. Tests: [MoneyCharacterizationTest](src/test/java/com/yarez/banking/MoneyCharacterizationTest.java) and [BigDecimalMoneyTest](src/test/java/com/yarez/banking/BigDecimalMoneyTest.java).
+10. **Coverage added, runtime behavior unchanged — identical timestamps in `Main`.** `LocalDateTime.now()` is still called in a tight loop, so the captured timestamp displays still show no reorder. Commit `8824460` adds explicit distinct timestamps to prove both sort directions; no production change was needed. Test: [TransactionSortingTest](src/test/java/com/yarez/banking/TransactionSortingTest.java).
+11. **Still true — the internal collections are not exposed.** No registry getter returns its `Set` or `Map`, and both list getters return `List.copyOf`. This is a good practice worth keeping; [Not covered yet](#12-not-covered-yet) mentions `Collections.unmodifiableX` for cases where a live read-only view is wanted instead.
 
 ## 12. Not covered yet
 
@@ -1021,7 +1058,7 @@ Everything in this section is a **suggestion for further study**. None of it exi
 - `Collections.unmodifiableList`/`unmodifiableMap`: a live read-only view of a collection that may still change internally.
 - `Collections.binarySearch`, `frequency`, `min`, `max`, `reverse`, `shuffle`: audit queries and display utilities over sorted or unsorted lists.
 - `Arrays.asList` and `Arrays.sort`: quick fixed-size adapters and sorting primitive arrays of amounts.
-- `removeIf`, `computeIfAbsent`, `merge`, `putIfAbsent`, `getOrDefault`, `replaceAll`: compact filtering and aggregation over registries.
+- `removeIf`, `computeIfAbsent`, `merge`, `getOrDefault`, `replaceAll`: compact filtering and aggregation over registries. (`putIfAbsent` is now used in the three account registries.)
 - `ConcurrentHashMap`, `CopyOnWriteArrayList`, `ConcurrentLinkedQueue`: registries and logs shared by multiple threads.
 - `BlockingQueue` with a producer/consumer: a real multi-threaded request pipeline instead of the single-threaded `ArrayDeque` demo.
 - `Spliterator`: parallel-friendly traversal of a large transaction history.
@@ -1034,13 +1071,13 @@ All exercises start from the existing code. Do them on a copy if you want to kee
 
 1. Change `TransactionRegistry` from `HashSet` to `LinkedHashSet` and compare the "Registered Transactions" output with the capture in 6.2.1. Explain which line changed and why.
 2. Replace the `ArrayDeque` in `BankingRequestQueue` with `LinkedList` as the `Queue` implementation. Confirm the output is unchanged, then list the memory and locality trade-offs.
-3. Add a second comparator key to `PriorityBankingRequestQueue` so equal priorities sort by `requestId`. Re-run and verify that the two `HIGH` requests now poll in a deterministic order.
-4. Call `PriorityBankingRequestQueue.displayPendingRequests()` from `Main`. Observe that its output is not priority-sorted, then change the method to drain a copy of the heap in priority order.
+3. **Already done on this branch:** `PriorityBankingRequestQueue` uses a FIFO sequence tie-break. Study `PriorityBankingRequestQueueTest`, then try replacing the sequence with `requestId` and explain why insertion order is the stronger guarantee.
+4. **Already done on this branch:** `displayPendingRequests()` drains a sorted copy. Try calling it from `Main`, predict the four printed lines, then check that the next poll is still request 2002.
 5. Convert `RecentAccountRegistry` to an access-order `LinkedHashMap` with an eldest-entry limit of two accounts. Re-run section 11 of `Main` and describe which account is evicted.
 6. Replace the `TreeMap` in `SortedAccountRegistry` with a `HashMap` and sort `entrySet()` inside `displaySortedAccounts()`. Measure or reason about the extra O(n log n) work per display and the loss of `firstKey`/`lastKey`.
 7. Make `List.copyOf` in `BankAccount.getTransactionHistory()` into a `Collections.unmodifiableList` view. Add code that deposits after obtaining the list and show the difference between view and snapshot.
-8. Replace the `containsKey`-then-`put` pattern in `AccountRegistry.registerAccount` with a single conditional put. Verify the duplicate message and return value stay the same.
-9. Add `equals` and `hashCode` to `BankAccount` consistent with `compareTo`, then try putting accounts into a `HashSet` and a `TreeSet`. Explain what would break without those methods.
+8. **Already done on this branch:** `putIfAbsent` replaced the double lookup in all three account registries. `RegistryDuplicateRegistrationTest` is the characterization you can read to see why the message and return values did not change.
+9. **Already done on this branch:** `BankAccount.equals`/`hashCode` match `compareTo`. `BankAccountEqualityTest` puts equal accounts in both `HashSet` and `TreeSet`; remove the overrides locally to see the test fail again.
 10. Aggregate `account.getTransactionHistory()` by `type` into a `Map<String, Integer>` and print the counts. Try both a loop with `merge` and a stream with `Collectors.groupingBy`, then compare the result types and complexity.
 
 ## 14. References
