@@ -18,12 +18,12 @@ public class RecentAccountRegistry {
 
         long accountNumber = account.getAccountNumber();
 
-        if (accounts.containsKey(accountNumber)) {
+        BankAccount existing = accounts.putIfAbsent(accountNumber, account);
+
+        if (existing != null) {
             System.out.println("Account already registered: " + accountNumber);
             return false;
         }
-
-        accounts.put(accountNumber, account);
 
         System.out.println("Account registered: " + accountNumber);
 
